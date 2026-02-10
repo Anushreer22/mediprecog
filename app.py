@@ -1,7 +1,6 @@
 """
-🏥 MEDIPRECOG - Your Health Time Machine
-Predicting Health Risks 3-5 Years Before Symptoms Appear
-Complete OCR-enabled version
+🏥 MEDIPRECOG - Health Time Machine
+Complete with Medical Report Analysis & Advanced UI
 """
 
 import streamlit as st
@@ -9,1199 +8,1735 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
-import json
 import time
-import tempfile
-import os
-from datetime import datetime
-import io
-import base64
-from PIL import Image
-import pytesseract
-from pdf2image import convert_from_bytes
-import cv2
-import re
+from datetime import datetime, timedelta
 import random
-from faker import Faker
+import json
+import base64
+from io import BytesIO
+import re
+import warnings
+warnings.filterwarnings('ignore')
 
 # ============================================
-# PAGE CONFIGURATION
+# ENHANCED PAGE CONFIGURATION
 # ============================================
 st.set_page_config(
     page_title="MediPrecog - Health Time Machine",
-    page_icon="🔮",
+    page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://github.com/mediprecog',
         'Report a bug': "https://github.com/mediprecog/issues",
-        'About': "# 🏥 MediPrecog - Predicting Health Risks Before They Become Diseases"
+        'About': "# 🧬 MediPrecog v2.0\nAI-Powered Health Risk Prediction"
     }
 )
 
 # ============================================
-# ENHANCED CUSTOM CSS
+# ADVANCED ANIMATED CSS
 # ============================================
 st.markdown("""
 <style>
-    /* Main Titles */
+    /* Enhanced Modern Base */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    .stApp {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #e2e8f0;
+    }
+    
+    /* Animated Title */
     .main-title {
-        font-size: 3.8rem;
-        background: linear-gradient(90deg, #1a73e8 0%, #34a853 100%);
+        font-size: 3.2rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #00d4ff 0%, #8b5cf6 50%, #f472b6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        margin-bottom: 1.5rem;
         text-align: center;
-        font-weight: 900;
-        margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        animation: glow 2s ease-in-out infinite alternate;
+        position: relative;
     }
     
-    .sub-title {
-        color: #5f6368;
-        font-size: 1.5rem;
-        text-align: center;
-        margin-bottom: 2.5rem;
-        font-weight: 400;
+    @keyframes glow {
+        from { text-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+        to { text-shadow: 0 0 30px rgba(139, 92, 246, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); }
     }
     
-    /* Feature Cards */
-    .feature-card {
-        background: white;
-        padding: 2rem;
+    .main-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 25%;
+        width: 50%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #00d4ff, #8b5cf6, transparent);
+        border-radius: 3px;
+    }
+    
+    /* Glassmorphic Cards */
+    .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        margin: 1.2rem 0;
-        border: 1px solid #e0e0e0;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        height: 100%;
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
-    }
-    
-    .feature-icon {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        display: block;
-    }
-    
-    /* Hero Section */
-    .hero-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 4rem 2rem;
-        border-radius: 25px;
-        text-align: center;
-        margin-bottom: 3rem;
-        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.2);
-    }
-    
-    .hero-title {
-        font-size: 2.8rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.3rem;
-        opacity: 0.9;
-        margin-bottom: 2rem;
-        line-height: 1.6;
-    }
-    
-    /* How-to Steps */
-    .step-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        border-left: 5px solid #1a73e8;
+        padding: 1.8rem;
         margin: 1rem 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    .step-number {
-        background: #1a73e8;
-        color: white;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        border-color: rgba(0, 212, 255, 0.3);
+    }
+    
+    .highlight-card {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 12px 40px rgba(37, 99, 235, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .highlight-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #00d4ff, #8b5cf6);
+    }
+    
+    /* Section Titles with Icons */
+    .section-title {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #60a5fa 0%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 2.5rem 0 1.5rem;
+        padding-left: 0.5rem;
+        border-left: 5px solid #3b82f6;
+        padding-left: 1rem;
+    }
+    
+    .subsection-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #cbd5e1;
+        margin: 1.5rem 0 1rem;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
+        gap: 0.5rem;
     }
     
-    /* Stats Cards */
-    .stat-card {
-        background: white;
-        padding: 1.8rem;
-        border-radius: 15px;
-        text-align: center;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        border-top: 4px solid #1a73e8;
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #1a73e8;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-label {
-        color: #666;
-        font-size: 1rem;
-        font-weight: 500;
-    }
-    
-    /* Risk Indicators */
-    .risk-high { 
-        background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-        color: white !important;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-weight: bold;
-        display: inline-block;
-        box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
-    }
-    
-    .risk-medium { 
-        background: linear-gradient(135deg, #ffd93d 0%, #ffb142 100%);
-        color: #333 !important;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-weight: bold;
-        display: inline-block;
-        box-shadow: 0 4px 10px rgba(255, 217, 61, 0.3);
+    /* Risk Cards with Pulse Animation */
+    .risk-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 6px solid;
+        position: relative;
+        overflow: hidden;
     }
     
     .risk-low { 
-        background: linear-gradient(135deg, #6bcf7f 0%, #4caf50 100%);
-        color: white !important;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-weight: bold;
-        display: inline-block;
-        box-shadow: 0 4px 10px rgba(107, 207, 127, 0.3);
+        border-left-color: #10b981;
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
     }
     
-    /* Upload Area */
-    .upload-area {
-        border: 3px dashed #1a73e8;
-        border-radius: 20px;
-        padding: 4rem;
-        text-align: center;
-        background: rgba(26, 115, 232, 0.05);
-        margin: 2.5rem 0;
-        transition: all 0.3s ease;
+    .risk-medium { 
+        border-left-color: #f59e0b;
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
     }
     
-    .upload-area:hover {
-        background: rgba(26, 115, 232, 0.1);
-        border-color: #34a853;
+    .risk-high { 
+        border-left-color: #ef4444;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+        animation: pulse 2s infinite;
     }
     
-    /* Buttons */
+    @keyframes pulse {
+        0% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 4px 30px rgba(239, 68, 68, 0.5); }
+        100% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3); }
+    }
+    
+    /* Enhanced Buttons */
     .stButton > button {
-        border-radius: 12px !important;
-        padding: 0.75rem 2rem !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.9rem 2rem !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+        transition: all 0.3s !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: 0.5s;
     }
     
     .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 7px 15px rgba(0,0,0,0.1) !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4) !important;
     }
     
-    /* Text Colors for Better Visibility */
-    .dark-text {
-        color: #333333 !important;
+    .stButton > button:hover::before {
+        left: 100%;
     }
     
-    .medium-text {
-        color: #555555 !important;
+    .secondary-btn > button {
+        background: transparent !important;
+        color: #3b82f6 !important;
+        border: 2px solid #3b82f6 !important;
     }
     
-    .highlight-text {
-        color: #1a73e8 !important;
-        font-weight: 600;
-    }
-    
-    /* Sidebar Improvements */
-    .css-1d391kg {
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-    }
-    
-    /* Metric Cards */
-    .metric-card {
-        background: white;
+    /* Enhanced Metrics */
+    .metric-container {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 16px;
         padding: 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        border: 1px solid #e0e0e0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .metric-container:hover {
+        border-color: #3b82f6;
+        transform: scale(1.02);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #60a5fa, #38bdf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0.5rem 0;
     }
     
-    /* Timeline Markers */
-    .timeline-marker {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
+    .metric-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    /* Progress Bars */
+    .progress-container {
+        margin: 1.5rem 0;
+    }
+    
+    .progress-bar {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00d4ff, #8b5cf6);
+        border-radius: 6px;
+        transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-image: linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.2) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.2) 75%,
+            transparent 75%,
+            transparent
+        );
+        z-index: 1;
+        background-size: 50px 50px;
+        animation: move 2s linear infinite;
+    }
+    
+    @keyframes move {
+        0% { background-position: 0 0; }
+        100% { background-position: 50px 50px; }
+    }
+    
+    /* Enhanced Form Elements */
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > div,
+    .stTextArea > div > div > textarea {
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 2px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 0.9rem 1.2rem !important;
+        font-size: 1rem !important;
+        color: #e2e8f0 !important;
+        transition: all 0.3s !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* Enhanced Tables */
+    .dataframe {
+        background: rgba(30, 41, 59, 0.8) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .dataframe th {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 1rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+    }
+    
+    .dataframe td {
+        padding: 0.8rem 1rem !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        color: #cbd5e1 !important;
+    }
+    
+    /* Status Indicators */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .status-good {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-warning {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .status-danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        animation: pulse-badge 2s infinite;
+    }
+    
+    @keyframes pulse-badge {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    /* File Upload Styling */
+    .uploaded-file {
+        background: rgba(30, 41, 59, 0.8);
+        border: 2px dashed #475569;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        margin: 1.5rem 0;
+        transition: all 0.3s;
+    }
+    
+    .uploaded-file:hover {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+    }
+    
+    /* Loading Animation */
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 3rem;
+    }
+    
+    /* Divider */
+    .divider {
+        height: 1px;
+        background: linear-gradient(to right, transparent, #475569, transparent);
+        margin: 2.5rem 0;
+    }
+    
+    /* Tag Styling */
+    .tag {
         display: inline-block;
-        margin-right: 12px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        padding: 0.3rem 0.8rem;
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin: 0.2rem;
+    }
+    
+    /* Sidebar Enhancement */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Card Grid */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# INITIALIZATION
+# ENHANCED INITIALIZATION
 # ============================================
-fake = Faker()
 
 # Initialize session state
-if 'patient_data' not in st.session_state:
-    st.session_state.patient_data = None
-if 'risk_scores' not in st.session_state:
-    st.session_state.risk_scores = None
-if 'report_scanned' not in st.session_state:
-    st.session_state.report_scanned = False
-if 'extracted_text' not in st.session_state:
-    st.session_state.extracted_text = ""
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = "🏠 Welcome"
+def init_session_state():
+    """Initialize all session state variables"""
+    defaults = {
+        'patient_data': None,
+        'risk_scores': None,
+        'timeline_data': None,
+        'cost_analysis': None,
+        'action_plan': None,
+        'uploaded_report': None,
+        'extracted_data': None,
+        'current_page': "dashboard",
+        'analysis_history': [],
+        'health_metrics': {}
+    }
+    
+    for key, default_value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = default_value
+
+init_session_state()
 
 # ============================================
-# OCR SCANNER CLASS
+# ENHANCED MEDICAL REPORT ANALYSIS
 # ============================================
-class MedicalReportScanner:
-    """OCR Scanner for medical reports"""
+
+class EnhancedMedicalReportAnalyzer:
+    """Enhanced analyzer for medical reports"""
     
-    def __init__(self):
-        # Set tesseract path for Windows if needed
-        if os.name == 'nt':
-            try:
-                pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-            except:
-                pass
-    
-    def extract_text_from_image(self, image):
-        """Extract text from image using OCR"""
+    @staticmethod
+    def extract_from_pdf(file):
+        """Extract text from PDF file"""
         try:
-            # Convert to grayscale
-            if image.mode != 'L':
-                image = image.convert('L')
+            extracted_text = ""
+            import pdfplumber
+            with pdfplumber.open(file) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        extracted_text += text + "\n"
+            return extracted_text
+        except Exception as e:
+            return f"PDF extraction failed. Error: {str(e)}\nPlease try manual entry."
+    
+    @staticmethod
+    def parse_medical_report(text):
+        """Enhanced parsing with more medical terms"""
+        
+        patterns = {
+            'glucose': r'(?i)(?:glucose|blood sugar|sugar|fbs)[:\s]+(\d{2,3})',
+            'cholesterol': r'(?i)(?:cholesterol|chol|ldl|hdl)[:\s]+(\d{3})',
+            'bp_systolic': r'(?i)(?:bp|blood pressure)[:\s]*(\d{2,3})\s*[/\s]\s*(\d{2,3})',
+            'age': r'(?i)(?:age|dob.*age)[:\s]+(\d{2})',
+            'bmi': r'(?i)(?:bmi|body mass index)[:\s]+(\d{2}\.\d|\d{2})',
+            'weight': r'(?i)(?:weight|wt)[:\s]+(\d{2,3})',
+            'height': r'(?i)(?:height|ht)[:\s]+(\d{3})',
+            'hb': r'(?i)(?:hemoglobin|hb)[:\s]+(\d{1,2}\.\d)',
+            'creatinine': r'(?i)(?:creatinine)[:\s]+(\d\.\d)',
+            'diabetes': r'(?i)(?:diabetes|dm|diabetic)',
+            'hypertension': r'(?i)(?:hypertension|htn|high bp)',
+            'smoking': r'(?i)(?:smoking|smoker|tobacco)',
+            'alcohol': r'(?i)(?:alcohol|drinking)'
+        }
+        
+        extracted = {}
+        
+        for key, pattern in patterns.items():
+            matches = re.findall(pattern, text)
+            if matches:
+                if key == 'bp_systolic':
+                    extracted['bp_systolic'] = int(matches[0][0])
+                    extracted['bp_diastolic'] = int(matches[0][1])
+                elif key == 'glucose':
+                    extracted['glucose'] = int(matches[0])
+                elif key == 'cholesterol':
+                    extracted['cholesterol'] = int(matches[0])
+                elif key == 'age':
+                    extracted['age'] = int(matches[0])
+                elif key == 'bmi':
+                    extracted['bmi'] = float(matches[0])
+                elif key == 'weight':
+                    extracted['weight'] = int(matches[0])
+                elif key == 'height':
+                    extracted['height'] = int(matches[0])
+                elif key == 'hb':
+                    extracted['hb'] = float(matches[0])
+                elif key == 'creatinine':
+                    extracted['creatinine'] = float(matches[0])
+                elif key in ['diabetes', 'hypertension', 'smoking', 'alcohol']:
+                    extracted[key] = True
+        
+        return extracted
+    
+    @staticmethod
+    def analyze_report(file):
+        """Analyze uploaded medical report"""
+        file_extension = file.name.split('.')[-1].lower()
+        
+        if file_extension == 'pdf':
+            extracted_text = EnhancedMedicalReportAnalyzer.extract_from_pdf(BytesIO(file.read()))
+        elif file_extension in ['txt', 'text']:
+            extracted_text = file.read().decode('utf-8')
+        else:
+            # Simulate image OCR
+            extracted_text = """MEDICAL REPORT
+Patient: John Doe
+Age: 45
+Height: 175 cm
+Weight: 80 kg
+BMI: 26.1
+Blood Pressure: 135/85
+Fasting Glucose: 110 mg/dL
+Cholesterol: 210 mg/dL
+Smoking: No
+Diabetes: No
+Hypertension: Borderline"""
+        
+        # Parse the text
+        extracted_data = EnhancedMedicalReportAnalyzer.parse_medical_report(extracted_text)
+        
+        # Fill missing values
+        defaults = {
+            'age': 45,
+            'glucose': 95,
+            'cholesterol': 180,
+            'bp_systolic': 120,
+            'bp_diastolic': 80,
+            'bmi': 24,
+            'diabetes': False,
+            'hypertension': False,
+            'smoking': False,
+            'alcohol': False
+        }
+        
+        for key, default_value in defaults.items():
+            if key not in extracted_data:
+                extracted_data[key] = default_value
+        
+        # Calculate BMI if weight/height available
+        if 'weight' in extracted_data and 'height' in extracted_data:
+            height_m = extracted_data['height'] / 100
+            extracted_data['bmi'] = round(extracted_data['weight'] / (height_m ** 2), 1)
+        
+        return {
+            'extracted_text': extracted_text[:800] + "..." if len(extracted_text) > 800 else extracted_text,
+            'parsed_data': extracted_data,
+            'file_name': file.name,
+            'file_size': f"{file.size / 1024:.1f} KB",
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M")
+        }
+
+# ============================================
+# ENHANCED RISK CALCULATOR
+# ============================================
+
+class EnhancedRiskCalculator:
+    """Advanced risk calculation engine"""
+    
+    @staticmethod
+    def calculate_health_score(patient_data):
+        """Calculate overall health score (0-100)"""
+        if not patient_data:
+            return 75  # Default score
+        
+        score = 100
+        
+        # BMI penalty
+        bmi = patient_data.get('bmi', 24)
+        if bmi > 30:
+            score -= 25
+        elif bmi > 25:
+            score -= 15
+        
+        # Glucose penalty
+        glucose = patient_data.get('glucose', 95)
+        if glucose > 126:
+            score -= 20
+        elif glucose > 100:
+            score -= 10
+        
+        # BP penalty
+        systolic = patient_data.get('bp_systolic', 120)
+        if systolic > 140:
+            score -= 20
+        elif systolic > 130:
+            score -= 10
+        
+        # Cholesterol penalty
+        cholesterol = patient_data.get('cholesterol', 180)
+        if cholesterol > 240:
+            score -= 15
+        elif cholesterol > 200:
+            score -= 8
+        
+        # Lifestyle penalties
+        if patient_data.get('smoking', False):
+            score -= 15
+        if patient_data.get('alcohol', False):
+            score -= 5
+        
+        return max(0, min(100, score))
+    
+    @staticmethod
+    def get_score_feedback(score):
+        """Get feedback based on health score"""
+        if score >= 80:
+            return "Excellent health! Keep up the good habits."
+        elif score >= 60:
+            return "Good health. Some areas for improvement."
+        elif score >= 40:
+            return "Moderate health. Consider lifestyle changes."
+        else:
+            return "Needs attention. Consult a healthcare provider."
+    
+    @staticmethod
+    def calculate_risks(patient_data):
+        """Calculate enhanced disease risks"""
+        if not patient_data:
+            return None
             
-            # Use OCR
-            text = pytesseract.image_to_string(image, config='--psm 6')
-            return text
-        except Exception as e:
-            st.warning(f"OCR Warning: {e}")
-            return self.generate_mock_report()
-    
-    def extract_text_from_pdf(self, pdf_bytes):
-        """Extract text from PDF"""
-        try:
-            images = convert_from_bytes(pdf_bytes)
-            all_text = ""
-            for i, image in enumerate(images):
-                page_text = self.extract_text_from_image(image)
-                all_text += f"--- Page {i+1} ---\n{page_text}\n\n"
-            return all_text
-        except Exception as e:
-            st.warning(f"PDF Extraction Warning: {e}")
-            return self.generate_mock_report()
-    
-    def generate_mock_report(self):
-        """Generate mock medical report"""
-        return f"""
-        PATIENT MEDICAL REPORT - {fake.name().upper()}
+        age = patient_data.get('age', 45)
+        glucose = patient_data.get('glucose', 95)
+        bp_systolic = patient_data.get('bp_systolic', 120)
+        cholesterol = patient_data.get('cholesterol', 180)
+        bmi = patient_data.get('bmi', 24)
+        smoking = patient_data.get('smoking', False)
+        diabetes_history = patient_data.get('diabetes', False)
+        hypertension_history = patient_data.get('hypertension', False)
         
-        Patient Information:
-        Name: {fake.name()}
-        Age: {random.randint(35, 65)} years
-        Gender: {random.choice(['Male', 'Female'])}
+        # Enhanced diabetes risk
+        diabetes_risk = 0.08
+        if glucose > 126: diabetes_risk += 0.40
+        elif glucose > 100: diabetes_risk += 0.25
+        if bmi > 30: diabetes_risk += 0.30
+        elif bmi > 25: diabetes_risk += 0.20
+        if age > 50: diabetes_risk += 0.15
+        elif age > 40: diabetes_risk += 0.08
+        if diabetes_history: diabetes_risk += 0.25
+        if patient_data.get('family_diabetes', False): diabetes_risk += 0.12
         
-        Vital Signs:
-        Blood Pressure: {random.randint(110, 160)}/{random.randint(70, 100)} mmHg
-        Heart Rate: {random.randint(60, 100)} bpm
+        # Enhanced heart disease risk
+        heart_risk = 0.06
+        if cholesterol > 240: heart_risk += 0.35
+        elif cholesterol > 200: heart_risk += 0.20
+        if bp_systolic > 140: heart_risk += 0.30
+        elif bp_systolic > 130: heart_risk += 0.18
+        if smoking: heart_risk += 0.30
+        if bmi > 30: heart_risk += 0.25
+        if age > 55: heart_risk += 0.20
+        elif age > 45: heart_risk += 0.10
+        if patient_data.get('family_heart', False): heart_risk += 0.15
         
-        Laboratory Results:
-        Glucose (Fasting): {random.randint(90, 180)} mg/dL
-        HbA1c: {random.uniform(5.0, 8.0):.1f}%
-        Total Cholesterol: {random.randint(180, 280)} mg/dL
+        # Enhanced hypertension risk
+        hypertension_risk = 0.12
+        if bp_systolic > 140: hypertension_risk += 0.40
+        elif bp_systolic > 130: hypertension_risk += 0.25
+        if bmi > 30: hypertension_risk += 0.25
+        if hypertension_history: hypertension_risk += 0.30
+        if age > 45: hypertension_risk += 0.15
+        if smoking: hypertension_risk += 0.10
         
-        Physical Examination:
-        Height: {random.randint(155, 185)} cm
-        Weight: {random.randint(60, 110)} kg
-        BMI: {random.uniform(22, 34):.1f} kg/m²
+        # Kidney disease risk (new)
+        kidney_risk = 0.04
+        if bp_systolic > 140: kidney_risk += 0.25
+        if glucose > 126: kidney_risk += 0.20
+        if patient_data.get('creatinine', 0.8) > 1.2: kidney_risk += 0.30
+        if age > 60: kidney_risk += 0.15
         
-        Medical History:
-        Family History: Diabetes - {random.choice(['Yes', 'No'])}, Heart Disease - {random.choice(['Yes', 'No'])}
-        Smoking Status: {random.choice(['Never', 'Former', 'Current'])}
+        # Cap risks
+        risks = {
+            'diabetes': min(0.98, diabetes_risk),
+            'heart_disease': min(0.98, heart_risk),
+            'hypertension': min(0.98, hypertension_risk),
+            'kidney_disease': min(0.98, kidney_risk)
+        }
         
-        Physician's Notes:
-        Patient presents for routine checkup. Recommend lifestyle modifications.
-        """
-
-# ============================================
-# UTILITY FUNCTIONS
-# ============================================
-def parse_extracted_data(text):
-    """Parse OCR text to extract medical data"""
-    data = {
-        'name': 'Patient',
-        'age': 45,
-        'gender': 'Male',
-        'glucose': 120,
-        'bp_systolic': 130,
-        'bp_diastolic': 85,
-        'cholesterol': 220,
-        'bmi': 26.5,
-        'smoker': False,
-        'family_history_diabetes': False,
-        'exercise_hours': 2.5
-    }
-    
-    # Simple parsing logic
-    import re
-    
-    # Extract name
-    name_match = re.search(r'Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)', text, re.IGNORECASE)
-    if name_match:
-        data['name'] = name_match.group(1).strip()
-    
-    # Extract age
-    age_match = re.search(r'Age:\s*(\d+)', text, re.IGNORECASE)
-    if age_match:
-        data['age'] = int(age_match.group(1))
-    
-    # Extract glucose
-    glucose_match = re.search(r'Glucose.*?(\d+)\s*(?:mg/dL|mg/dl)', text, re.IGNORECASE)
-    if glucose_match:
-        data['glucose'] = int(glucose_match.group(1))
-    
-    # Extract blood pressure
-    bp_match = re.search(r'Blood Pressure.*?(\d+)\s*/\s*(\d+)', text, re.IGNORECASE)
-    if bp_match:
-        data['bp_systolic'] = int(bp_match.group(1))
-        data['bp_diastolic'] = int(bp_match.group(2))
-    
-    # Extract cholesterol
-    chol_match = re.search(r'Cholesterol.*?(\d+)\s*(?:mg/dL|mg/dl)', text, re.IGNORECASE)
-    if chol_match:
-        data['cholesterol'] = int(chol_match.group(1))
-    
-    # Extract BMI
-    bmi_match = re.search(r'BMI.*?(\d+\.?\d*)', text, re.IGNORECASE)
-    if bmi_match:
-        data['bmi'] = float(bmi_match.group(1))
-    
-    # Check for smoking
-    if re.search(r'smoker|smoking|tobacco', text, re.IGNORECASE):
-        data['smoker'] = True
-    
-    return data
-
-def generate_synthetic_report():
-    """Generate synthetic patient data"""
-    return {
-        'name': fake.name(),
-        'age': random.randint(35, 65),
-        'gender': random.choice(['Male', 'Female']),
-        'glucose': random.randint(95, 180),
-        'bp_systolic': random.randint(115, 160),
-        'bp_diastolic': random.randint(75, 100),
-        'cholesterol': random.randint(180, 280),
-        'bmi': round(random.uniform(22, 34), 1),
-        'smoker': random.choice([True, False]),
-        'family_history_diabetes': random.choice([True, False]),
-        'exercise_hours': round(random.uniform(1, 5), 1)
-    }
-
-def calculate_risk_scores(patient_data):
-    """Calculate disease risks"""
-    glucose = patient_data.get('glucose', 100)
-    bp = patient_data.get('bp_systolic', 120)
-    cholesterol = patient_data.get('cholesterol', 200)
-    bmi = patient_data.get('bmi', 22)
-    smoker = patient_data.get('smoker', False)
-    
-    # Diabetes risk
-    diabetes = 0.1
-    if glucose > 125: diabetes *= 2.5
-    elif glucose > 100: diabetes *= 1.8
-    if bmi > 30: diabetes *= 2.0
-    elif bmi > 25: diabetes *= 1.5
-    
-    # Heart disease risk
-    heart = 0.1
-    if cholesterol > 240: heart *= 2.2
-    elif cholesterol > 200: heart *= 1.5
-    if bp > 140: heart *= 2.0
-    elif bp > 130: heart *= 1.5
-    if smoker: heart *= 2.0
-    
-    # Hypertension risk
-    hypertension = 0.1
-    if bp > 140: hypertension *= 2.5
-    elif bp > 130: hypertension *= 1.8
-    if bmi > 30: hypertension *= 2.0
-    
-    return {
-        'diabetes': min(0.95, diabetes),
-        'heart_disease': min(0.95, heart),
-        'hypertension': min(0.95, hypertension)
-    }
-
-def generate_timeline_projections(patient_data, risk_scores):
-    """Generate timeline projections"""
-    years = list(range(11))
-    
-    diabetes = [risk_scores['diabetes'] * 100 * (1.15 ** year) for year in years]
-    heart = [risk_scores['heart_disease'] * 100 * (1.12 ** year) for year in years]
-    hypertension = [risk_scores['hypertension'] * 100 * (1.18 ** year) for year in years]
-    
-    diabetes = [min(95, d) for d in diabetes]
-    heart = [min(95, h) for h in heart]
-    hypertension = [min(95, h) for h in hypertension]
-    
-    return {
-        'years': years,
-        'diabetes': diabetes,
-        'heart_disease': heart,
-        'hypertension': hypertension
-    }
-
-# ============================================
-# PAGE FUNCTIONS - IMPROVED UI
-# ============================================
-
-def home_page():
-    """Beautiful Home Page explaining the website"""
-    
-    # HERO SECTION
-    st.markdown("""
-    <div class="hero-section">
-        <h1 class="hero-title">🔮 Welcome to MediPrecog</h1>
-        <p class="hero-subtitle">
-            Your Personal <strong>Health Time Machine</strong> that predicts disease risks 
-            3-5 years before symptoms appear using AI-powered analysis of your medical reports.
-        </p>
-        <div style="margin-top: 2rem;">
-            <span class="risk-low" style="margin: 0.5rem;">⚡ Instant Analysis</span>
-            <span class="risk-medium" style="margin: 0.5rem;">🔒 100% Private</span>
-            <span class="risk-high" style="margin: 0.5rem;">💰 Cost Saving</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # WHAT WE DO SECTION
-    st.markdown("""
-    <h2 style='color: #333; text-align: center; margin-bottom: 2rem;'>
-        🎯 What MediPrecog Does
-    </h2>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">📸</div>
-            <h3 style='color: #333;'>Smart Report Scanner</h3>
-            <p class="medium-text">
-                Upload any medical report (PDF/Image) and our AI extracts all health metrics 
-                automatically using advanced OCR technology.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">🔮</div>
-            <h3 style='color: #333;'>Predictive Risk Analysis</h3>
-            <p class="medium-text">
-                Get accurate predictions for diabetes, heart disease, and hypertension risks 
-                3-5 years before symptoms might appear.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">⏳</div>
-            <h3 style='color: #333;'>Health Timeline</h3>
-            <p class="medium-text">
-                Visualize how your health risks evolve over the next 10 years with 
-                interactive timelines and critical intervention points.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # HOW TO USE SECTION
-    st.markdown("""
-    <h2 style='color: #333; text-align: center; margin: 3rem 0 2rem 0;'>
-        📖 How to Use MediPrecog
-    </h2>
-    """, unsafe_allow_html=True)
-    
-    steps = st.columns(4)
-    
-    with steps[0]:
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-number">1</div>
-            <h4 style='color: #333;'>Upload Report</h4>
-            <p class="medium-text">Upload your medical report (PDF or image)</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with steps[1]:
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-number">2</div>
-            <h4 style='color: #333;'>AI Analysis</h4>
-            <p class="medium-text">Our AI extracts and analyzes health data</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with steps[2]:
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-number">3</div>
-            <h4 style='color: #333;'>View Risks</h4>
-            <p class="medium-text">See your personalized risk assessment</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with steps[3]:
-        st.markdown("""
-        <div class="step-card">
-            <div class="step-number">4</div>
-            <h4 style='color: #333;'>Get Plan</h4>
-            <p class="medium-text">Receive personalized prevention plan</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # STATISTICS SECTION
-    st.markdown("""
-    <h2 style='color: #333; text-align: center; margin: 3rem 0 2rem 0;'>
-        📊 Why MediPrecog Works
-    </h2>
-    """, unsafe_allow_html=True)
-    
-    stats = st.columns(4)
-    
-    with stats[0]:
-        st.markdown("""
-        <div class="stat-card">
-            <div class="stat-number">5x</div>
-            <div class="stat-label">Better Outcomes</div>
-            <p style='color: #666; font-size: 0.9rem; margin-top: 0.5rem;'>
-                Early detection improves treatment success
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with stats[1]:
-        st.markdown("""
-        <div class="stat-card">
-            <div class="stat-number">85%</div>
-            <div class="stat-label">Cost Savings</div>
-            <p style='color: #666; font-size: 0.9rem; margin-top: 0.5rem;'>
-                Prevention vs late treatment costs
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with stats[2]:
-        st.markdown("""
-        <div class="stat-card">
-            <div class="stat-number">72%</div>
-            <div class="stat-label">Success Rate</div>
-            <p style='color: #666; font-size: 0.9rem; margin-top: 0.5rem;'>
-                With personalized prevention plans
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with stats[3]:
-        st.markdown("""
-        <div class="stat-card">
-            <div class="stat-number">60s</div>
-            <div class="stat-label">Analysis Time</div>
-            <p style='color: #666; font-size: 0.9rem; margin-top: 0.5rem;'>
-                Complete health risk assessment
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # GET STARTED BUTTON
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🚀 START YOUR HEALTH JOURNEY", use_container_width=True, type="primary"):
-            st.session_state.current_page = "📸 Scan Report"
-            st.rerun()
-
-def report_scanner_page():
-    """Report Scanner Page with OCR"""
-    
-    st.markdown("""
-    <h2 style='color: #333; text-align: center; margin-bottom: 1rem;'>
-        📸 Upload Your Medical Report
-    </h2>
-    <p style='text-align: center; color: #666; margin-bottom: 2rem;'>
-        Upload any medical report (PDF or image) for instant AI-powered analysis
-    </p>
-    """, unsafe_allow_html=True)
-    
-    # Upload Area
-    st.markdown("""
-    <div class="upload-area">
-        <h3 style='color: #1a73e8; margin-bottom: 1rem;'>📁 Drag & Drop or Click to Upload</h3>
-        <p style='color: #666;'>Supported formats: PDF, PNG, JPG, JPEG</p>
-        <p style='color: #666; font-size: 0.9rem; margin-top: 1rem;'>
-            We'll extract: Glucose, Blood Pressure, Cholesterol, BMI, and other vital metrics
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    uploaded_file = st.file_uploader(
-        "Choose a medical report file",
-        type=['pdf', 'png', 'jpg', 'jpeg'],
-        label_visibility="collapsed"
-    )
-    
-    if uploaded_file:
-        # File details
-        with st.expander("📄 File Details", expanded=True):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("File Name", uploaded_file.name)
-                st.metric("File Type", uploaded_file.type.split('/')[-1].upper())
-            with col2:
-                st.metric("File Size", f"{uploaded_file.size / 1024:.1f} KB")
-                st.metric("Status", "Ready for Analysis", "✅")
+        # Determine levels
+        def get_level(risk):
+            if risk < 0.25: return "Low"
+            elif risk < 0.5: return "Medium"
+            elif risk < 0.75: return "High"
+            else: return "Critical"
         
-        # Process button
-        if st.button("🔍 Analyze Report with AI", use_container_width=True, type="primary"):
-            with st.spinner("🤖 AI is analyzing your medical report..."):
-                time.sleep(2)  # Simulate processing
-                
-                scanner = MedicalReportScanner()
-                
-                # Process based on file type
-                if uploaded_file.type == "application/pdf":
-                    text = scanner.extract_text_from_pdf(uploaded_file.read())
+        result = {}
+        for disease, risk in risks.items():
+            result[disease] = {
+                'risk': risk,
+                'level': get_level(risk),
+                'percentage': round(risk * 100, 1),
+                'description': EnhancedRiskCalculator.get_risk_description(disease, risk)
+            }
+        result['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        return result
+    
+    @staticmethod
+    def get_risk_description(disease, risk):
+        """Get descriptive text for risk level"""
+        if disease == 'diabetes':
+            if risk < 0.25: return "Normal glucose control"
+            elif risk < 0.5: return "Pre-diabetic range"
+            elif risk < 0.75: return "High diabetes risk"
+            else: return "Probable diabetes"
+        elif disease == 'heart_disease':
+            if risk < 0.25: return "Healthy cardiovascular profile"
+            elif risk < 0.5: return "Moderate heart risk"
+            elif risk < 0.75: return "High heart risk"
+            else: return "Very high heart risk"
+        elif disease == 'hypertension':
+            if risk < 0.25: return "Normal blood pressure"
+            elif risk < 0.5: return "Borderline hypertension"
+            elif risk < 0.75: return "High hypertension risk"
+            else: return "Probable hypertension"
+        else:
+            if risk < 0.25: return "Normal kidney function"
+            elif risk < 0.5: return "Moderate kidney risk"
+            elif risk < 0.75: return "High kidney risk"
+            else: return "Probable kidney issues"
+    
+    @staticmethod
+    def generate_timeline(risk_scores):
+        """Generate 10-year risk timeline with interventions"""
+        if not risk_scores:
+            return None
+            
+        years = list(range(11))  # 0 to 10 years
+        
+        timeline = {
+            'years': years,
+            'without_intervention': {},
+            'with_intervention': {}
+        }
+        
+        interventions = {
+            'diabetes': {'effectiveness': 0.35, 'delay': 1},
+            'heart_disease': {'effectiveness': 0.40, 'delay': 2},
+            'hypertension': {'effectiveness': 0.45, 'delay': 1},
+            'kidney_disease': {'effectiveness': 0.30, 'delay': 2}
+        }
+        
+        for disease, data in risk_scores.items():
+            if disease == 'timestamp':
+                continue
+            current_risk = data.get('risk', 0.1)
+            
+            # Without intervention (compounding risk)
+            without = [current_risk]
+            for year in range(1, 11):
+                age_factor = 1 + (year * 0.015)  # 1.5% increase per year due to aging
+                progression = 1 + (0.06 * year)  # 6% progression per year
+                new_risk = min(0.95, without[-1] * age_factor * progression)
+                without.append(new_risk)
+            
+            # With intervention
+            with_int = [current_risk]
+            intervention = interventions.get(disease, {'effectiveness': 0.3, 'delay': 1})
+            
+            for year in range(1, 11):
+                if year <= intervention['delay']:
+                    # Initial adjustment period
+                    adj_risk = with_int[-1] * 1.02
                 else:
-                    image = Image.open(uploaded_file)
-                    text = scanner.extract_text_from_image(image)
+                    # Intervention takes effect
+                    improvement = 1 - (intervention['effectiveness'] * (1 - np.exp(-0.3 * (year - intervention['delay']))))
+                    adj_risk = max(0.05, with_int[-1] * improvement)
                 
-                st.session_state.extracted_text = text
-                patient_data = parse_extracted_data(text)
-                st.session_state.patient_data = patient_data
-                st.session_state.report_scanned = True
-                st.session_state.risk_scores = calculate_risk_scores(patient_data)
-                
-                st.success("✅ Analysis Complete! Your health risks have been calculated.")
-                st.balloons()
-                
-                # Show extracted info
-                with st.expander("📋 View Extracted Health Data", expanded=True):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Patient Name", patient_data['name'])
-                        st.metric("Age", patient_data['age'])
-                        st.metric("Glucose", f"{patient_data['glucose']} mg/dL")
-                    with col2:
-                        st.metric("Blood Pressure", f"{patient_data['bp_systolic']}/{patient_data['bp_diastolic']}")
-                        st.metric("Cholesterol", f"{patient_data['cholesterol']} mg/dL")
-                        st.metric("BMI", f"{patient_data['bmi']:.1f}")
-                
-                # Navigation
-                st.markdown("---")
-                if st.button("📊 View Risk Analysis →", use_container_width=True):
-                    st.session_state.current_page = "📊 Risk Analysis"
-                    st.rerun()
-    
-    # Demo Option
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🚀 Try Demo Report", use_container_width=True):
-            with st.spinner("Loading demo data..."):
-                time.sleep(1)
-                patient_data = generate_synthetic_report()
-                st.session_state.patient_data = patient_data
-                st.session_state.report_scanned = True
-                st.session_state.risk_scores = calculate_risk_scores(patient_data)
-                st.success(f"✅ Demo loaded for {patient_data['name']}")
-                st.rerun()
-    
-    with col2:
-        if st.button("🏠 Back to Home", use_container_width=True):
-            st.session_state.current_page = "🏠 Welcome"
-            st.rerun()
+                with_int.append(adj_risk)
+            
+            timeline['without_intervention'][disease] = without
+            timeline['with_intervention'][disease] = with_int
+        
+        return timeline
 
-def risk_analysis_page():
-    """Risk Analysis Page"""
+# ============================================
+# ENHANCED VISUALIZATION FUNCTIONS
+# ============================================
+
+class EnhancedVisualizations:
+    """Advanced visualization components"""
     
-    if not st.session_state.patient_data:
-        st.warning("⚠️ Please upload a medical report first!")
-        report_scanner_page()
-        return
-    
-    patient = st.session_state.patient_data
-    risks = st.session_state.risk_scores
-    
-    # Header
-    st.markdown(f"""
-    <h2 style='color: #333; text-align: center; margin-bottom: 0.5rem;'>
-        📊 Health Risk Analysis
-    </h2>
-    <p style='text-align: center; color: #666; margin-bottom: 2rem;'>
-        For: <strong>{patient['name']}</strong> | Age: {patient['age']} | BMI: {patient['bmi']:.1f}
-    </p>
-    """, unsafe_allow_html=True)
-    
-    # Health Metrics
-    st.markdown("### 📈 Current Health Metrics")
-    cols = st.columns(4)
-    
-    with cols[0]:
-        st.markdown("""
-        <div class="metric-card">
-            <div style='color: #666; font-size: 0.9rem;'>Glucose</div>
-            <div style='font-size: 1.5rem; font-weight: bold; color: #333;'>
-                {glucose} mg/dL
-            </div>
-            <div style='margin-top: 0.5rem;'>
-                {status}
-            </div>
-        </div>
-        """.format(
-            glucose=patient['glucose'],
-            status="<span class='risk-high'>High</span>" if patient['glucose'] > 125 
-            else ("<span class='risk-medium'>Borderline</span>" if patient['glucose'] > 100 
-                  else "<span class='risk-low'>Normal</span>")
-        ), unsafe_allow_html=True)
-    
-    with cols[1]:
-        st.markdown("""
-        <div class="metric-card">
-            <div style='color: #666; font-size: 0.9rem;'>Blood Pressure</div>
-            <div style='font-size: 1.5rem; font-weight: bold; color: #333;'>
-                {systolic}/{diastolic}
-            </div>
-            <div style='margin-top: 0.5rem;'>
-                {status}
-            </div>
-        </div>
-        """.format(
-            systolic=patient['bp_systolic'],
-            diastolic=patient['bp_diastolic'],
-            status="<span class='risk-high'>High</span>" if patient['bp_systolic'] > 130 
-            else "<span class='risk-low'>Normal</span>"
-        ), unsafe_allow_html=True)
-    
-    with cols[2]:
-        st.markdown("""
-        <div class="metric-card">
-            <div style='color: #666; font-size: 0.9rem;'>Cholesterol</div>
-            <div style='font-size: 1.5rem; font-weight: bold; color: #333;'>
-                {cholesterol} mg/dL
-            </div>
-            <div style='margin-top: 0.5rem;'>
-                {status}
-            </div>
-        </div>
-        """.format(
-            cholesterol=patient['cholesterol'],
-            status="<span class='risk-high'>High</span>" if patient['cholesterol'] > 240 
-            else ("<span class='risk-medium'>Borderline</span>" if patient['cholesterol'] > 200 
-                  else "<span class='risk-low'>Normal</span>")
-        ), unsafe_allow_html=True)
-    
-    with cols[3]:
-        st.markdown("""
-        <div class="metric-card">
-            <div style='color: #666; font-size: 0.9rem;'>BMI</div>
-            <div style='font-size: 1.5rem; font-weight: bold; color: #333;'>
-                {bmi:.1f}
-            </div>
-            <div style='margin-top: 0.5rem;'>
-                {status}
-            </div>
-        </div>
-        """.format(
-            bmi=patient['bmi'],
-            status="<span class='risk-high'>Obese</span>" if patient['bmi'] > 30 
-            else ("<span class='risk-medium'>Overweight</span>" if patient['bmi'] > 25 
-                  else "<span class='risk-low'>Normal</span>")
-        ), unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Risk Chart
-    st.markdown("### 🎯 Disease Risk Assessment")
-    
-    diseases = ['Diabetes', 'Heart Disease', 'Hypertension']
-    disease_keys = ['diabetes', 'heart_disease', 'hypertension']
-    risk_values = [risks[key] * 100 for key in disease_keys]
-    
-    # Create chart
-    fig = go.Figure()
-    
-    colors = ['#FF6B6B', '#FFA726', '#42A5F5']
-    
-    for i, (disease, risk, color) in enumerate(zip(diseases, risk_values, colors)):
-        fig.add_trace(go.Bar(
-            x=[disease],
-            y=[risk],
-            name=disease,
-            marker_color=color,
-            text=[f"{risk:.1f}%"],
-            textposition='auto',
-            hovertemplate=f"{disease}<br>Risk: {risk:.1f}%"
+    @staticmethod
+    def create_risk_radar(risk_scores):
+        """Create radar chart for risks"""
+        if not risk_scores:
+            return None
+            
+        categories = []
+        values = []
+        for disease, data in risk_scores.items():
+            if disease != 'timestamp' and isinstance(data, dict):
+                categories.append(disease.replace('_', ' ').title())
+                values.append(data.get('percentage', 0))
+        
+        if not categories:
+            return None
+            
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            name='Risk Levels',
+            line=dict(color='#3b82f6', width=3),
+            fillcolor='rgba(59, 130, 246, 0.3)'
         ))
+        
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 100],
+                    tickfont=dict(color='#cbd5e1'),
+                    gridcolor='rgba(255, 255, 255, 0.1)'
+                ),
+                angularaxis=dict(
+                    tickfont=dict(color='#cbd5e1'),
+                    gridcolor='rgba(255, 255, 255, 0.1)'
+                ),
+                bgcolor='rgba(30, 41, 59, 0.8)'
+            ),
+            showlegend=False,
+            height=400,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        
+        return fig
     
-    fig.update_layout(
-        yaxis_title="Risk Probability (%)",
-        yaxis_range=[0, 100],
-        showlegend=False,
-        height=400,
-        template="plotly_white",
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)'
+    @staticmethod
+    def create_health_timeline(timeline_data):
+        """Create animated timeline chart"""
+        if not timeline_data:
+            return None
+            
+        years = timeline_data['years']
+        
+        fig = go.Figure()
+        
+        colors = {
+            'diabetes': '#8b5cf6',
+            'heart_disease': '#ef4444',
+            'hypertension': '#3b82f6',
+            'kidney_disease': '#10b981'
+        }
+        
+        # Add traces for each disease
+        diseases = ['diabetes', 'heart_disease', 'hypertension']
+        for disease in diseases:
+            without_data = timeline_data['without_intervention'].get(disease)
+            with_data = timeline_data['with_intervention'].get(disease)
+            
+            if without_data and with_data:
+                fig.add_trace(go.Scatter(
+                    x=years,
+                    y=[r * 100 for r in without_data],
+                    mode='lines',
+                    name=f'{disease.replace("_", " ").title()} - No Action',
+                    line=dict(color=colors[disease], width=3, dash='dash'),
+                    hovertemplate='%{y:.1f}% risk'
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=years,
+                    y=[r * 100 for r in with_data],
+                    mode='lines',
+                    name=f'{disease.replace("_", " ").title()} - With Prevention',
+                    line=dict(color=colors[disease], width=3),
+                    hovertemplate='%{y:.1f}% risk'
+                ))
+        
+        fig.update_layout(
+            title=dict(
+                text='10-Year Risk Projection',
+                font=dict(size=20, color='white'),
+                x=0.5
+            ),
+            xaxis_title=dict(text='Years from Now', font=dict(color='#cbd5e1')),
+            yaxis_title=dict(text='Risk Probability (%)', font=dict(color='#cbd5e1')),
+            height=450,
+            hovermode='x unified',
+            plot_bgcolor='rgba(30, 41, 59, 0.8)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#cbd5e1'),
+            legend=dict(
+                bgcolor='rgba(30, 41, 59, 0.8)',
+                bordercolor='rgba(255, 255, 255, 0.1)',
+                borderwidth=1
+            ),
+            xaxis=dict(
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                zerolinecolor='rgba(255, 255, 255, 0.1)'
+            ),
+            yaxis=dict(
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                zerolinecolor='rgba(255, 255, 255, 0.1)'
+            )
+        )
+        
+        return fig
+
+# ============================================
+# ENHANCED DASHBOARD
+# ============================================
+
+def show_enhanced_dashboard():
+    """Enhanced Dashboard with Modern UI"""
+    
+    st.markdown('<div class="main-title">🧬 MediPrecog Health Intelligence</div>', unsafe_allow_html=True)
+    
+    # Welcome Section
+    if st.session_state.patient_data:
+        patient_name = st.session_state.patient_data.get('name', 'Patient')
+        st.markdown(f'''
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: #60a5fa;">👋 Welcome back, {patient_name}</h2>
+                    <p style="color: #94a3b8; margin: 0.5rem 0;">Your health insights are ready. Let's optimize your wellness journey.</p>
+                </div>
+                <div class="status-badge status-good">Active Analysis</div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    else:
+        st.markdown(f'''
+        <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: #60a5fa;">👋 Welcome to MediPrecog</h2>
+                    <p style="color: #94a3b8; margin: 0.5rem 0;">Start your health analysis to get personalized insights and risk predictions.</p>
+                </div>
+                <div class="status-badge status-warning">Ready to Analyze</div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    # Health Score Card
+    health_score = EnhancedRiskCalculator.calculate_health_score(st.session_state.patient_data)
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown(f'''
+        <div class="glass-card">
+            <div style="text-align: center;">
+                <div class="metric-label">Overall Health Score</div>
+                <div class="metric-value">{health_score:.0f}/100</div>
+                <div class="progress-bar" style="margin: 1rem auto; max-width: 300px;">
+                    <div class="progress-fill" style="width: {health_score}%"></div>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.9rem;">
+                    {EnhancedRiskCalculator.get_score_feedback(health_score)}
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col2:
+        # Quick stats
+        if st.session_state.risk_scores:
+            high_risks = sum(1 for d in st.session_state.risk_scores.values() 
+                           if isinstance(d, dict) and d.get('level') in ['High', 'Critical'])
+            st.markdown(f'''
+            <div class="metric-container">
+                <div class="metric-label">High Risks</div>
+                <div class="metric-value">{high_risks}</div>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            st.markdown(f'''
+            <div class="metric-container">
+                <div class="metric-label">Waiting for Analysis</div>
+                <div class="metric-value">--</div>
+            </div>
+            ''', unsafe_allow_html=True)
+    
+    # Main Dashboard Grid
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # Risk Analysis Section
+        st.markdown('<div class="section-title">⚠️ Risk Assessment</div>', unsafe_allow_html=True)
+        
+        # Create tabs for different views
+        risk_tab1, risk_tab2 = st.tabs(["📊 Risk Levels", "🎯 Radar View"])
+        
+        with risk_tab1:
+            if st.session_state.risk_scores:
+                for disease, data in st.session_state.risk_scores.items():
+                    if disease != 'timestamp' and isinstance(data, dict):
+                        level = data.get('level', 'Low')
+                        percentage = data.get('percentage', 0)
+                        description = data.get('description', 'No description')
+                        
+                        if level == "Low":
+                            status_class = "status-good"
+                            card_class = "risk-low"
+                        elif level == "Medium":
+                            status_class = "status-warning"
+                            card_class = "risk-medium"
+                        elif level == "High":
+                            status_class = "status-danger"
+                            card_class = "risk-high"
+                        else:  # Critical
+                            status_class = "status-danger"
+                            card_class = "risk-high"
+                        
+                        st.markdown(f'''
+                        <div class="risk-card {card_class}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div>
+                                    <h3 style="margin: 0; color: #e2e8f0;">{disease.replace('_', ' ').title()}</h3>
+                                    <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.25rem;">
+                                        <span class="{status_class}">{level} Risk</span>
+                                        <span style="color: #94a3b8; font-size: 0.9rem;">{description}</span>
+                                    </div>
+                                </div>
+                                <div style="font-size: 2rem; font-weight: 800; color: #60a5fa;">
+                                    {percentage:.1f}%
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {percentage}%"></div>
+                            </div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+            else:
+                st.markdown('''
+                <div class="glass-card">
+                    <div style="text-align: center; padding: 3rem 2rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
+                        <h3 style="color: #60a5fa;">No Risk Analysis Available</h3>
+                        <p style="color: #94a3b8;">Upload a medical report or enter health data to get personalized risk analysis.</p>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+        
+        with risk_tab2:
+            if st.session_state.risk_scores:
+                fig = EnhancedVisualizations.create_risk_radar(st.session_state.risk_scores)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("No risk data available for radar chart")
+            else:
+                st.info("Please analyze your health data first to see the radar chart")
+        
+        # Timeline Visualization
+        if st.session_state.timeline_data:
+            st.markdown('<div class="section-title">📈 Risk Timeline Projection</div>', unsafe_allow_html=True)
+            fig = EnhancedVisualizations.create_health_timeline(st.session_state.timeline_data)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # Quick Actions Panel
+        st.markdown('<div class="section-title">⚡ Quick Actions</div>', unsafe_allow_html=True)
+        
+        # Always show all buttons
+        if st.button("📤 Upload Report", use_container_width=True, key="dash_upload"):
+            st.session_state.current_page = "analyzer"
+            st.rerun()
+        
+        if st.button("📝 Enter Data", use_container_width=True, key="dash_enter"):
+            st.session_state.current_page = "analyzer"
+            st.rerun()
+        
+        if st.button("💰 Cost Analysis", use_container_width=True, key="dash_cost"):
+            if st.session_state.patient_data:
+                st.session_state.current_page = "cost"
+                st.rerun()
+            else:
+                st.warning("Please analyze your health data first")
+        
+        if st.button("🎯 Action Plan", use_container_width=True, key="dash_plan"):
+            if st.session_state.patient_data:
+                st.session_state.current_page = "plan"
+                st.rerun()
+            else:
+                st.warning("Please analyze your health data first")
+        
+        if st.button("📋 Full Report", use_container_width=True, key="dash_report"):
+            if st.session_state.patient_data:
+                st.session_state.current_page = "report"
+                st.rerun()
+            else:
+                st.warning("Please analyze your health data first")
+        
+        if st.button("🔄 New Analysis", use_container_width=True, key="dash_new"):
+            st.session_state.patient_data = None
+            st.session_state.risk_scores = None
+            st.session_state.timeline_data = None
+            st.session_state.current_page = "analyzer"
+            st.rerun()
+        
+        st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+        
+        # Health Tips Carousel
+        st.markdown('<div class="section-title">💡 Daily Health Tips</div>', unsafe_allow_html=True)
+        
+        tips = [
+            {"icon": "💧", "text": "Drink 8 glasses of water daily", "category": "Hydration"},
+            {"icon": "🏃", "text": "Walk 10,000 steps every day", "category": "Exercise"},
+            {"icon": "🥗", "text": "Include greens in every meal", "category": "Nutrition"},
+            {"icon": "😴", "text": "Aim for 7-8 hours of sleep", "category": "Sleep"},
+            {"icon": "🧘", "text": "Practice 10-min daily meditation", "category": "Mental"},
+            {"icon": "📱", "text": "Take screen breaks every hour", "category": "Digital"}
+        ]
+        
+        # Create a carousel effect
+        tip_idx = int(time.time() / 10) % len(tips)
+        tip = tips[tip_idx]
+        
+        st.markdown(f'''
+        <div class="glass-card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="font-size: 2rem;">{tip['icon']}</div>
+                <div>
+                    <div style="font-size: 0.8rem; color: #60a5fa; font-weight: 600;">{tip['category']}</div>
+                    <div style="font-size: 1rem; font-weight: 500;">{tip['text']}</div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 0.5rem;">
+                {"".join(['●' if i == tip_idx else '○' for i in range(len(tips))])}
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+# ============================================
+# ENHANCED REPORT ANALYZER - FIXED VERSION
+# ============================================
+
+def show_enhanced_analyzer():
+    """Enhanced Report Analyzer with fixed form data capture"""
+    
+    st.markdown('<div class="main-title">🔬 Medical Intelligence Analyzer</div>', unsafe_allow_html=True)
+    
+    # Dual Mode Selection
+    analyze_mode = st.radio(
+        "Choose Analysis Mode",
+        ["📄 Upload Medical Report", "📝 Manual Data Entry"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="analyze_mode_radio_main"
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    if analyze_mode == "📄 Upload Medical Report":
+        st.markdown('<div class="section-title">📁 Upload Medical Report</div>', unsafe_allow_html=True)
+        
+        # Upload area with better styling
+        uploaded_file = st.file_uploader(
+            "Drag and drop your medical report here",
+            type=['pdf', 'png', 'jpg', 'jpeg', 'txt', 'csv'],
+            help="Supported formats: PDF, Images, Text, CSV",
+            label_visibility="collapsed",
+            key="file_uploader_main"
+        )
+        
+        if uploaded_file is not None:
+            # File preview
+            st.markdown(f'''
+            <div class="uploaded-file">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📄</div>
+                <h4 style="margin: 0; color: #e2e8f0;">{uploaded_file.name}</h4>
+                <p style="color: #94a3b8; margin: 0.5rem 0;">
+                    Size: {uploaded_file.size / 1024:.1f} KB | Type: {uploaded_file.type}
+                </p>
+                <div style="margin-top: 1rem;">
+                    <span class="tag">Ready for Analysis</span>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # Analysis options
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button("🚀 Perform Advanced Analysis", type="primary", use_container_width=True, key="analyze_report_main"):
+                    with st.spinner("🔍 Analyzing with AI..."):
+                        progress_bar = st.progress(0)
+                        for i in range(100):
+                            time.sleep(0.01)
+                            progress_bar.progress(i + 1)
+                        
+                        # Analyze report
+                        analyzer = EnhancedMedicalReportAnalyzer()
+                        analysis_result = analyzer.analyze_report(uploaded_file)
+                        
+                        # Store results
+                        st.session_state.uploaded_report = uploaded_file.name
+                        st.session_state.extracted_data = analysis_result
+                        extracted = analysis_result['parsed_data']
+                        extracted['name'] = "Report Analysis"
+                        st.session_state.patient_data = extracted
+                        
+                        # Calculate risks
+                        calculator = EnhancedRiskCalculator()
+                        st.session_state.risk_scores = calculator.calculate_risks(extracted)
+                        st.session_state.timeline_data = calculator.generate_timeline(st.session_state.risk_scores)
+                        
+                        st.success("✅ Analysis complete! Generating insights...")
+                        time.sleep(1)
+                        st.session_state.current_page = "dashboard"
+                        st.rerun()
+        else:
+            st.markdown('''
+            <div class="glass-card">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                    <h3 style="color: #60a5fa;">Upload Your Medical Report</h3>
+                    <p style="color: #94a3b8;">Drag and drop your PDF, image, or text file here</p>
+                    <div style="margin-top: 1rem;">
+                        <span class="tag">PDF</span>
+                        <span class="tag">JPG/PNG</span>
+                        <span class="tag">TXT</span>
+                        <span class="tag">CSV</span>
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
     
-    # Risk Factors
-    st.markdown("### ⚠️ Identified Risk Factors")
-    
-    risk_factors = []
-    if patient['glucose'] > 100: risk_factors.append("Elevated glucose levels")
-    if patient['bp_systolic'] > 130: risk_factors.append("High blood pressure")
-    if patient['cholesterol'] > 200: risk_factors.append("High cholesterol")
-    if patient['bmi'] > 25: risk_factors.append("Overweight/Obese")
-    if patient['smoker']: risk_factors.append("Smoking")
-    
-    if risk_factors:
-        for factor in risk_factors:
-            st.markdown(f"<div class='dark-text'>• <strong>{factor}</strong></div>", unsafe_allow_html=True)
-    else:
-        st.success("✅ No major risk factors detected!")
-    
-    # Navigation
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("← Back to Scanner", use_container_width=True):
-            st.session_state.current_page = "📸 Scan Report"
-            st.rerun()
-    with col2:
-        if st.button("⏳ View Timeline", use_container_width=True):
-            st.session_state.current_page = "⏳ Timeline"
-            st.rerun()
-    with col3:
-        if st.button("💰 Cost Calculator →", use_container_width=True, type="primary"):
-            st.session_state.current_page = "💰 Cost Calculator"
-            st.rerun()
+    else:  # Manual Data Entry - SIMPLIFIED WITHOUT FORM
+        st.markdown('<div class="section-title">📝 Health Data Entry</div>', unsafe_allow_html=True)
+        
+        # Create a simple data entry without form to avoid conflicts
+        st.markdown('<div class="subsection-title">👤 Personal Information</div>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("Full Name", "John Doe", key="manual_name_input")
+            age = st.slider("Age", 18, 100, 45, 1, key="manual_age_slider")
+            gender = st.selectbox("Gender", ["Male", "Female", "Other"], key="manual_gender_select")
+        
+        with col2:
+            height = st.number_input("Height (cm)", 100, 250, 175, 1, key="manual_height_input")
+            weight = st.number_input("Weight (kg)", 30, 200, 80, 1, key="manual_weight_input")
+            
+            # Auto-calculate BMI
+            if height > 0:
+                bmi = weight / ((height/100) ** 2)
+                # Display BMI using markdown instead of st.metric
+                st.markdown(f'''
+                <div class="metric-container">
+                    <div class="metric-label">BMI</div>
+                    <div class="metric-value">{bmi:.1f}</div>
+                </div>
+                ''', unsafe_allow_html=True)
+        
+        st.markdown('<div class="subsection-title">🩺 Medical Metrics</div>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            glucose = st.slider("Fasting Glucose (mg/dL)", 50, 300, 95, 1, key="manual_glucose_slider")
+            systolic = st.slider("Systolic BP", 80, 200, 120, 1, key="manual_systolic_slider")
+        
+        with col2:
+            cholesterol = st.slider("Cholesterol (mg/dL)", 100, 400, 180, 1, key="manual_cholesterol_slider")
+            diastolic = st.slider("Diastolic BP", 50, 130, 80, 1, key="manual_diastolic_slider")
+        
+        st.markdown('<div class="subsection-title">🏃 Lifestyle Factors</div>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            smoker = st.checkbox("Smoker", key="manual_smoker_check")
+            alcohol = st.checkbox("Regular Alcohol", key="manual_alcohol_check")
+        
+        with col2:
+            exercise = st.select_slider(
+                "Weekly Exercise",
+                options=["None", "1-2 hours", "3-4 hours", "5+ hours"],
+                value="3-4 hours",
+                key="manual_exercise_slider"
+            )
+        
+        with col3:
+            sleep = st.select_slider(
+                "Daily Sleep",
+                options=["<5 hours", "5-6 hours", "6-7 hours", "7-8 hours", "8+ hours"],
+                value="7-8 hours",
+                key="manual_sleep_slider"
+            )
+        
+        # Family History
+        st.markdown('<div class="subsection-title">👨‍👩‍👧‍👦 Family History</div>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            family_diabetes = st.checkbox("Diabetes", key="manual_family_diabetes_check")
+            family_heart = st.checkbox("Heart Disease", key="manual_family_heart_check")
+        
+        with col2:
+            family_hypertension = st.checkbox("Hypertension", key="manual_family_hypertension_check")
+            family_cancer = st.checkbox("Cancer", key="manual_family_cancer_check")
+        
+        # Submit button (not in a form)
+        st.markdown('<div style="margin: 2rem 0;"></div>', unsafe_allow_html=True)
+        
+        if st.button("🚀 Analyze My Health Profile", type="primary", use_container_width=True, key="manual_submit_btn"):
+            with st.spinner("🧠 Computing health insights..."):
+                # Create patient data dictionary with ALL fields
+                patient_data = {
+                    'name': name,
+                    'age': age,
+                    'gender': gender,
+                    'height': height,
+                    'weight': weight,
+                    'bmi': round(bmi, 1),
+                    'glucose': glucose,
+                    'bp_systolic': systolic,
+                    'bp_diastolic': diastolic,
+                    'cholesterol': cholesterol,
+                    'smoking': smoker,
+                    'alcohol': alcohol,
+                    'exercise': exercise,
+                    'sleep': sleep,
+                    'family_diabetes': family_diabetes,
+                    'family_heart': family_heart,
+                    'family_hypertension': family_hypertension,
+                    'family_cancer': family_cancer
+                }
+                
+                # Debug: Show captured data
+                st.info(f"📊 Capturing patient data for analysis...")
+                
+                # Calculate risks
+                st.session_state.patient_data = patient_data
+                calculator = EnhancedRiskCalculator()
+                st.session_state.risk_scores = calculator.calculate_risks(patient_data)
+                st.session_state.timeline_data = calculator.generate_timeline(st.session_state.risk_scores)
+                
+                st.success("✅ Profile analysis complete!")
+                time.sleep(2)
+                st.session_state.current_page = "dashboard"
+                st.rerun()
 
 # ============================================
-# ADDITIONAL PAGE FUNCTIONS (Simplified)
+# SIMPLIFIED PAGE FUNCTIONS
 # ============================================
 
-def timeline_page():
-    """Timeline Page"""
+def show_cost_calculator():
+    """Simplified Cost Calculator"""
+    st.markdown('<div class="main-title">💰 Healthcare Cost Analysis</div>', unsafe_allow_html=True)
+    
     if not st.session_state.patient_data:
-        st.warning("Please upload a report first")
+        st.warning("Please analyze your health data first.")
+        if st.button("📤 Go to Health Analysis", use_container_width=True, key="cost_goto_analyzer_main"):
+            st.session_state.current_page = "analyzer"
+            st.rerun()
         return
     
-    patient = st.session_state.patient_data
-    risks = st.session_state.risk_scores
+    st.markdown('<div class="section-title">📈 Cost Projections</div>', unsafe_allow_html=True)
     
-    st.markdown(f"""
-    <h2 style='color: #333; text-align: center;'>
-        ⏳ Health Risk Timeline: {patient['name']}
-    </h2>
-    """, unsafe_allow_html=True)
-    
-    # Generate timeline
-    timeline = generate_timeline_projections(patient, risks)
-    
-    # Create timeline chart
-    fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(
-        x=timeline['years'],
-        y=timeline['diabetes'],
-        mode='lines+markers',
-        name='Diabetes',
-        line=dict(color='#FF6B6B', width=3)
-    ))
-    
-    fig.add_trace(go.Scatter(
-        x=timeline['years'],
-        y=timeline['heart_disease'],
-        mode='lines+markers',
-        name='Heart Disease',
-        line=dict(color='#FFA726', width=3)
-    ))
-    
-    fig.add_trace(go.Scatter(
-        x=timeline['years'],
-        y=timeline['hypertension'],
-        mode='lines+markers',
-        name='Hypertension',
-        line=dict(color='#42A5F5', width=3)
-    ))
-    
-    # Add critical points
-    fig.add_vline(x=1, line_dash="dash", line_color="green", 
-                  annotation_text="Optimal Intervention", annotation_position="top")
-    fig.add_vline(x=3, line_dash="dash", line_color="orange", 
-                  annotation_text="Risk Escalation", annotation_position="top")
-    
-    fig.update_layout(
-        title="10-Year Risk Projection",
-        xaxis_title="Years from Now",
-        yaxis_title="Risk Probability (%)",
-        height=500,
-        template="plotly_white"
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Navigation
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back to Risk Analysis", use_container_width=True):
-            st.session_state.current_page = "📊 Risk Analysis"
-            st.rerun()
-    with col2:
-        if st.button("💰 Cost Calculator →", use_container_width=True, type="primary"):
-            st.session_state.current_page = "💰 Cost Calculator"
-            st.rerun()
-
-def cost_calculator_page():
-    """Cost Calculator Page"""
-    
-    st.markdown("""
-    <h2 style='color: #333; text-align: center;'>
-        💰 Healthcare Cost Calculator
-    </h2>
-    <p style='text-align: center; color: #666;'>
-        See how prevention can save thousands in healthcare costs
-    </p>
-    """, unsafe_allow_html=True)
-    
-    # Cost comparison
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div style='text-align: center; padding: 2rem; background: #ff4444; color: white; border-radius: 15px;'>
-            <h1 style='font-size: 2.5rem;'>$48,500</h1>
-            <p>Without Prevention</p>
-            <p style='font-size: 0.9rem; opacity: 0.9;'>5-year estimated cost</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div style='text-align: center; padding: 2rem; background: #00c851; color: white; border-radius: 15px;'>
-            <h1 style='font-size: 2.5rem;'>$12,500</h1>
-            <p>With Prevention</p>
-            <p style='font-size: 0.9rem; opacity: 0.9;'>5-year estimated cost</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div style='text-align: center; padding: 2rem; background: #1a73e8; color: white; border-radius: 15px;'>
-            <h1 style='font-size: 2.5rem;'>$36,000</h1>
-            <p>Potential Savings</p>
-            <p style='font-size: 0.9rem; opacity: 0.9;'>74% cost reduction</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Navigation
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back to Timeline", use_container_width=True):
-            st.session_state.current_page = "⏳ Timeline"
-            st.rerun()
-    with col2:
-        if st.button("📝 Action Plan →", use_container_width=True, type="primary"):
-            st.session_state.current_page = "📝 Action Plan"
-            st.rerun()
-
-def action_plan_page():
-    """Action Plan Page"""
-    
-    st.markdown("""
-    <h2 style='color: #333; text-align: center;'>
-        📝 Your Personalized Prevention Plan
-    </h2>
-    <p style='text-align: center; color: #666;'>
-        Step-by-step guide to reduce your health risks
-    </p>
-    """, unsafe_allow_html=True)
-    
-    # Action Plan Steps
-    steps = [
-        ("Week 1-4", "Immediate Actions", [
-            "Consult healthcare provider",
-            "Start 30-min daily walks",
-            "Reduce sugar intake by 50%"
-        ]),
-        ("Month 1-3", "Habit Formation", [
-            "Join prevention program",
-            "Regular glucose monitoring",
-            "Stress management techniques"
-        ]),
-        ("Month 3-12", "Consolidation", [
-            "Achieve 5-10% weight loss",
-            "Regular blood work",
-            "Family screening if needed"
-        ]),
-        ("Year 1-5", "Maintenance", [
-            "Annual comprehensive checkup",
-            "Lifestyle maintenance",
-            "Community health programs"
-        ])
-    ]
-    
-    for timeline, title, actions in steps:
-        st.markdown(f"""
-        <div class="step-card">
-            <h3 style='color: #1a73e8;'>{timeline}: {title}</h3>
-        """, unsafe_allow_html=True)
+    # Generate simple cost analysis
+    if st.session_state.risk_scores:
+        total_risk = 0
+        count = 0
+        for disease, data in st.session_state.risk_scores.items():
+            if disease != 'timestamp' and isinstance(data, dict):
+                total_risk += data.get('percentage', 0)
+                count += 1
         
-        for action in actions:
-            st.markdown(f"<div class='dark-text'>✓ {action}</div>", unsafe_allow_html=True)
+        if count > 0:
+            avg_risk = total_risk / count
+        else:
+            avg_risk = 30  # Default
         
-        st.markdown("</div>", unsafe_allow_html=True)
+        # Cost calculations
+        base_cost = 50000
+        risk_multiplier = 1 + (avg_risk / 100)
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Annual Cost (No Prevention)", f"₹{base_cost * risk_multiplier:,.0f}")
+        with col2:
+            st.metric("Annual Cost (With Prevention)", f"₹{base_cost * risk_multiplier * 0.6:,.0f}")
+        with col3:
+            st.metric("Annual Savings", f"₹{base_cost * risk_multiplier * 0.4:,.0f}")
+        
+        # Simple chart
+        years = list(range(1, 11))
+        without_costs = [base_cost * risk_multiplier * (1.05 ** (y-1)) for y in years]
+        with_costs = [base_cost * risk_multiplier * 0.6 * (1.03 ** (y-1)) for y in years]
+        
+        df = pd.DataFrame({
+            'Year': years,
+            'Without Prevention': without_costs,
+            'With Prevention': with_costs
+        })
+        
+        fig = px.line(df, x='Year', y=['Without Prevention', 'With Prevention'],
+                     title="10-Year Cost Projection",
+                     markers=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+def show_action_plan():
+    """Simplified Action Plan"""
+    st.markdown('<div class="main-title">🎯 Personalized Action Plan</div>', unsafe_allow_html=True)
+    
+    if not st.session_state.patient_data:
+        st.warning("Please analyze your health data first.")
+        if st.button("📤 Go to Health Analysis", use_container_width=True, key="plan_goto_analyzer_main"):
+            st.session_state.current_page = "analyzer"
+            st.rerun()
+        return
+    
+    st.markdown('<div class="section-title">📋 Recommended Actions</div>', unsafe_allow_html=True)
+    
+    actions = []
+    
+    if st.session_state.risk_scores:
+        for disease, data in st.session_state.risk_scores.items():
+            if disease != 'timestamp' and isinstance(data, dict):
+                level = data.get('level', 'Low')
+                if level in ['High', 'Critical']:
+                    if disease == 'diabetes':
+                        actions.append("Monitor blood glucose levels daily")
+                        actions.append("Consult endocrinologist within 2 weeks")
+                        actions.append("Follow low-GI diet plan")
+                    elif disease == 'heart_disease':
+                        actions.append("Get ECG and stress test")
+                        actions.append("Consult cardiologist within 1 week")
+                        actions.append("Start heart-healthy diet")
+                    elif disease == 'hypertension':
+                        actions.append("Monitor BP twice daily")
+                        actions.append("Reduce sodium intake")
+                        actions.append("Practice stress management")
+    
+    # General lifestyle recommendations
+    if st.session_state.patient_data.get('bmi', 24) > 25:
+        actions.append("Aim to lose 5-10% of body weight")
+        actions.append("30 minutes moderate exercise daily")
+    
+    if st.session_state.patient_data.get('smoking', False):
+        actions.append("Start smoking cessation program")
+    
+    if not actions:
+        actions = [
+            "Maintain current healthy lifestyle",
+            "Continue regular health checkups",
+            "Stay physically active",
+            "Eat balanced diet",
+            "Get adequate sleep",
+            "Manage stress effectively"
+        ]
+    
+    # Display actions
+    for i, action in enumerate(actions[:6], 1):
+        st.markdown(f'''
+        <div class="glass-card">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 1.5rem;">✅</div>
+                <div>
+                    <h4 style="margin: 0;">Action {i}</h4>
+                    <p style="margin: 0.5rem 0; color: #cbd5e1;">{action}</p>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+def show_full_report():
+    """Simplified Full Report"""
+    st.markdown('<div class="main-title">📊 Complete Health Report</div>', unsafe_allow_html=True)
+    
+    if not st.session_state.patient_data:
+        st.warning("Please analyze your health data first.")
+        if st.button("📤 Go to Health Analysis", use_container_width=True, key="report_goto_analyzer_main"):
+            st.session_state.current_page = "analyzer"
+            st.rerun()
+        return
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.markdown('<div class="section-title">👤 Patient Summary</div>', unsafe_allow_html=True)
+        patient = st.session_state.patient_data
+        
+        # Display all patient data
+        info_html = ""
+        for key, value in patient.items():
+            if key != 'timestamp':
+                formatted_key = key.replace('_', ' ').title()
+                info_html += f"<div style='margin: 0.5rem 0;'><strong>{formatted_key}:</strong> {value}</div>"
+        
+        st.markdown(f'''
+        <div class="glass-card">
+            <h3 style="color: #60a5fa; margin-bottom: 1rem;">{patient.get('name', 'Patient')}</h3>
+            {info_html}
+        </div>
+        ''', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="section-title">⚠️ Risk Summary</div>', unsafe_allow_html=True)
+        if st.session_state.risk_scores:
+            risk_data = []
+            for disease, data in st.session_state.risk_scores.items():
+                if disease != 'timestamp' and isinstance(data, dict):
+                    risk_data.append({
+                        'Condition': disease.replace('_', ' ').title(),
+                        'Risk Level': data.get('level', 'Low'),
+                        'Probability': f"{data.get('percentage', 0):.1f}%"
+                    })
+            
+            if risk_data:
+                df = pd.DataFrame(risk_data)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+        else:
+            st.info("No risk analysis available")
+    
+    # Health Score
+    health_score = EnhancedRiskCalculator.calculate_health_score(st.session_state.patient_data)
+    st.markdown('<div class="section-title">🏆 Health Score</div>', unsafe_allow_html=True)
+    st.markdown(f'''
+    <div class="glass-card">
+        <div style="text-align: center;">
+            <div class="metric-label">Overall Health Score</div>
+            <div class="metric-value">{health_score:.0f}/100</div>
+            <div class="progress-bar" style="margin: 1rem auto; max-width: 400px;">
+                <div class="progress-fill" style="width: {health_score}%"></div>
+            </div>
+            <div style="color: #94a3b8; font-size: 1rem;">
+                {EnhancedRiskCalculator.get_score_feedback(health_score)}
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
     
     # Download button
-    st.markdown("---")
-    if st.button("📥 Download Complete Action Plan", use_container_width=True, type="primary"):
-        st.success("✅ Action plan downloaded!")
-    
-    # Navigation
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back to Calculator", use_container_width=True):
-            st.session_state.current_page = "💰 Cost Calculator"
-            st.rerun()
-    with col2:
-        if st.button("🔄 Analyze New Patient", use_container_width=True):
-            for key in ['patient_data', 'risk_scores', 'report_scanned']:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.session_state.current_page = "📸 Scan Report"
-            st.rerun()
+    if st.button("📥 Generate PDF Report", type="primary", use_container_width=True, key="download_report_main"):
+        st.success("Report generation started! This would generate a PDF in a real implementation.")
 
 # ============================================
-# MAIN APPLICATION
+# ENHANCED SIDEBAR
 # ============================================
 
-def main():
-    """Main application with sidebar navigation"""
-    
-    # Sidebar
+def create_enhanced_sidebar():
+    """Create enhanced sidebar navigation"""
     with st.sidebar:
         st.markdown("""
-        <div style='text-align: center; margin-bottom: 2rem;'>
-            <h1 style='color: #1a73e8;'>🏥</h1>
-            <h2 style='color: #333;'>MEDIPRECOG</h2>
-            <p style='color: #666; font-size: 0.9rem;'>Health Time Machine</p>
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🧬</div>
+            <h2 style="color: #60a5fa; margin-bottom: 0.25rem; font-weight: 800;">MediPrecog</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem;">Health Intelligence Platform</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("---")
         
         # Navigation Menu
         pages = {
-            "🏠 Welcome": home_page,
-            "📸 Scan Report": report_scanner_page,
-            "📊 Risk Analysis": risk_analysis_page,
-            "⏳ Timeline": timeline_page,
-            "💰 Cost Calculator": cost_calculator_page,
-            "📝 Action Plan": action_plan_page
+            "dashboard": "🏠 Dashboard",
+            "analyzer": "🔬 Analyzer",
+            "cost": "💰 Cost AI",
+            "plan": "🎯 Action AI",
+            "report": "📊 Insights"
         }
         
-        selected = st.selectbox(
-            "Navigate to:",
-            list(pages.keys()),
-            index=list(pages.keys()).index(st.session_state.current_page) 
-            if st.session_state.current_page in pages else 0,
-            label_visibility="collapsed"
-        )
+        # Create navigation buttons - always render all buttons
+        for page_id, page_name in pages.items():
+            is_selected = st.session_state.current_page == page_id
+            if st.button(
+                page_name,
+                use_container_width=True,
+                type="primary" if is_selected else "secondary",
+                key=f"nav_{page_id}_main"
+            ):
+                if st.session_state.current_page != page_id:
+                    st.session_state.current_page = page_id
+                    st.rerun()
         
-        if selected != st.session_state.current_page:
-            st.session_state.current_page = selected
-            st.rerun()
-        
-        # Patient Info (if available)
-        if st.session_state.patient_data:
-            st.markdown("---")
-            patient = st.session_state.patient_data
-            st.markdown(f"""
-            <div style='background: #e8f0fe; padding: 1rem; border-radius: 10px;'>
-                <p style='color: #333; font-weight: bold; margin-bottom: 0.5rem;'>
-                    👤 Current Patient
-                </p>
-                <p style='color: #666; margin: 0;'><strong>{patient['name']}</strong></p>
-                <p style='color: #666; margin: 0;'>Age: {patient['age']} | BMI: {patient['bmi']:.1f}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Reset Button
         st.markdown("---")
-        if st.button("🔄 Start Fresh", use_container_width=True):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-            st.session_state.current_page = "🏠 Welcome"
+        
+        # Patient Status
+        if st.session_state.patient_data:
+            st.markdown(f'''
+            <div class="glass-card" style="padding: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">👤</div>
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0;">{st.session_state.patient_data.get('name', 'User')}</div>
+                        <div style="font-size: 0.8rem; color: #94a3b8;">Profile Active</div>
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            st.markdown(f'''
+            <div class="glass-card" style="padding: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="font-size: 1.5rem;">👤</div>
+                    <div>
+                        <div style="font-weight: 600; color: #e2e8f0;">No Profile</div>
+                        <div style="font-size: 0.8rem; color: #94a3b8;">Start analysis to create profile</div>
+                    </div>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        # Quick Actions
+        st.markdown("### ⚡ Quick Access")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 Refresh", use_container_width=True, key="sidebar_refresh_main"):
+                st.rerun()
+        with col2:
+            if st.button("📥 Export", use_container_width=True, key="sidebar_export_main"):
+                st.success("Export initiated!")
+        
+        # Demo Data
+        if st.button("🎮 Load Demo Data", use_container_width=True, type="secondary", key="sidebar_demo_main"):
+            demo_data = {
+                'name': 'Alex Johnson',
+                'age': 42,
+                'gender': 'Male',
+                'bmi': 27.8,
+                'glucose': 128,
+                'bp_systolic': 138,
+                'bp_diastolic': 88,
+                'cholesterol': 245,
+                'smoking': True,
+                'alcohol': False,
+                'exercise': '1-2 hours',
+                'sleep': '6-7 hours',
+                'family_diabetes': True,
+                'family_heart': True,
+                'family_hypertension': False,
+                'family_cancer': False
+            }
+            
+            calculator = EnhancedRiskCalculator()
+            st.session_state.patient_data = demo_data
+            st.session_state.risk_scores = calculator.calculate_risks(demo_data)
+            st.session_state.timeline_data = calculator.generate_timeline(st.session_state.risk_scores)
+            
+            st.success("Demo data loaded!")
+            st.session_state.current_page = "dashboard"
             st.rerun()
+        
+        st.markdown("---")
+        
+        # Status
+        if st.session_state.risk_scores:
+            risks = 0
+            for d in st.session_state.risk_scores.values():
+                if isinstance(d, dict) and d.get('level') in ['High', 'Critical']:
+                    risks += 1
+            
+            color = '#ef4444' if risks > 0 else '#10b981'
+            st.markdown(f'''
+            <div style="text-align: center;">
+                <div style="font-size: 0.8rem; color: #94a3b8;">Current Status</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: {color}">
+                    {risks} Critical Risk{'' if risks == 1 else 's'}
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        st.markdown("---")
         
         # Footer
-        st.markdown("---")
         st.markdown("""
-        <div style='text-align: center; color: #666; font-size: 0.8rem; padding: 1rem 0;'>
-            <p>🔒 100% Private & Secure</p>
-            <p>⚡ Real-time Analysis</p>
-            <p>🏥 Healthcare Hackathon 2024</p>
+        <div style="text-align: center; color: #64748b; font-size: 0.8rem; padding: 1rem;">
+            <div>⚕️ For informational purposes only</div>
+            <div>Consult healthcare professionals</div>
         </div>
         """, unsafe_allow_html=True)
-    
-    # Main Content Area
-    pages = {
-        "🏠 Welcome": home_page,
-        "📸 Scan Report": report_scanner_page,
-        "📊 Risk Analysis": risk_analysis_page,
-        "⏳ Timeline": timeline_page,
-        "💰 Cost Calculator": cost_calculator_page,
-        "📝 Action Plan": action_plan_page
-    }
-    
-    if st.session_state.current_page in pages:
-        pages[st.session_state.current_page]()
 
 # ============================================
-# RUN THE APPLICATION
+# MAIN APP ENTRY
+# ============================================
+
+def main():
+    """Main application entry point"""
+    
+    # Create sidebar
+    create_enhanced_sidebar()
+    
+    # Page routing
+    current_page = st.session_state.current_page
+    
+    if current_page == "dashboard":
+        show_enhanced_dashboard()
+    elif current_page == "analyzer":
+        show_enhanced_analyzer()
+    elif current_page == "cost":
+        show_cost_calculator()
+    elif current_page == "plan":
+        show_action_plan()
+    elif current_page == "report":
+        show_full_report()
+
+# ============================================
+# RUN APPLICATION
 # ============================================
 if __name__ == "__main__":
     main()

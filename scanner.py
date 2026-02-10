@@ -1,213 +1,143 @@
 """
-Medical Report Scanner Module
-Handles OCR extraction from PDFs and images
+Medical report scanner module
+(Mocked for hackathon demo)
 """
 
-import pytesseract
-from pdf2image import convert_from_path, convert_from_bytes
-from PIL import Image
-import cv2
-import numpy as np
-import re
 import os
+from datetime import datetime
+from PIL import Image
+import pandas as pd
 
 class MedicalReportScanner:
-    """Scanner for medical reports with OCR capabilities"""
+    """Mock scanner for medical reports"""
     
     def __init__(self):
-        """Initialize the scanner"""
-        # For Windows, set tesseract path if needed
-        if os.name == 'nt':
-            try:
-                pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-            except:
-                pass
+        self.supported_formats = ['.pdf', '.jpg', '.png', '.jpeg', '.txt', '.docx']
+        self.scan_date = datetime.now()
     
-    def preprocess_image(self, image):
-        """Preprocess image for better OCR results"""
-        # Convert to grayscale
-        if image.mode != 'L':
-            image = image.convert('L')
+    def scan_report(self, file_path):
+        """Mock scanning of medical report"""
+        # In real implementation, this would use OCR/text extraction
+        # For hackathon, return mock data
         
-        # Convert PIL to OpenCV
-        cv_image = np.array(image)
+        file_ext = os.path.splitext(file_path)[1].lower()
         
-        # Apply thresholding
-        _, thresh = cv2.threshold(cv_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        # Denoise
-        denoised = cv2.medianBlur(thresh, 3)
-        
-        return Image.fromarray(denoised)
-    
-    def extract_text_from_image(self, image):
-        """Extract text from an image using OCR"""
-        try:
-            # Preprocess image
-            processed_image = self.preprocess_image(image)
-            
-            # Use Tesseract OCR
-            text = pytesseract.image_to_string(processed_image, config='--psm 6')
-            
-            return text
-        except Exception as e:
-            print(f"OCR Error: {e}")
-            # Return mock data for demo
-            return self.generate_mock_report()
-    
-    def extract_text_from_pdf(self, pdf_path):
-        """Extract text from PDF file"""
-        try:
-            # Convert PDF to images
-            images = convert_from_path(pdf_path)
-            
-            # Extract text from each page
-            all_text = ""
-            for i, image in enumerate(images):
-                page_text = self.extract_text_from_image(image)
-                all_text += f"--- Page {i+1} ---\n{page_text}\n\n"
-            
-            return all_text
-        except Exception as e:
-            print(f"PDF Extraction Error: {e}")
-            return self.generate_mock_report()
-    
-    def extract_text_from_pdf_bytes(self, pdf_bytes):
-        """Extract text from PDF bytes"""
-        try:
-            # Convert PDF bytes to images
-            images = convert_from_bytes(pdf_bytes)
-            
-            # Extract text from each page
-            all_text = ""
-            for i, image in enumerate(images):
-                page_text = self.extract_text_from_image(image)
-                all_text += f"--- Page {i+1} ---\n{page_text}\n\n"
-            
-            return all_text
-        except Exception as e:
-            print(f"PDF Bytes Extraction Error: {e}")
-            return self.generate_mock_report()
-    
-    def generate_mock_report(self):
-        """Generate a mock medical report for demo purposes"""
-        mock_report = """
-        PATIENT MEDICAL REPORT
-        
-        Patient Information:
-        Name: John A. Doe
-        Age: 45 years
-        Gender: Male
-        Date of Birth: 1978-06-15
-        Patient ID: MED-2023-56789
-        
-        Vital Signs:
-        Blood Pressure: 142/92 mmHg
-        Heart Rate: 78 bpm
-        Respiratory Rate: 16/min
-        Temperature: 98.6°F
-        SpO2: 98%
-        
-        Laboratory Results:
-        Glucose (Fasting): 135 mg/dL
-        HbA1c: 6.8%
-        Total Cholesterol: 245 mg/dL
-        HDL Cholesterol: 38 mg/dL
-        LDL Cholesterol: 168 mg/dL
-        Triglycerides: 210 mg/dL
-        
-        Physical Examination:
-        Height: 175 cm
-        Weight: 87 kg
-        BMI: 28.5 kg/m²
-        Waist Circumference: 102 cm
-        
-        Medical History:
-        Family History: Father - Type 2 Diabetes, Mother - Hypertension
-        Smoking Status: Current smoker (15 pack-years)
-        Alcohol Consumption: Social drinker (2-3 units/week)
-        Physical Activity: Sedentary lifestyle
-        Medications: None currently
-        
-        Risk Factors Identified:
-        1. Elevated fasting glucose (Prediabetes range)
-        2. High blood pressure (Stage 1 Hypertension)
-        3. High cholesterol (Hyperlipidemia)
-        4. Elevated BMI (Overweight)
-        5. Family history of diabetes
-        6. Smoking
-        
-        Recommendations:
-        1. Lifestyle modifications: Diet and exercise
-        2. Regular monitoring of blood pressure
-        3. Follow-up glucose testing in 3 months
-        4. Smoking cessation counseling
-        5. Consider lipid-lowering therapy
-        
-        Physician's Signature:
-        Dr. Sarah M. Chen, MD
-        Internal Medicine Specialist
-        Date: 2023-10-15
-        """
-        
-        return mock_report
-    
-    def extract_structured_data(self, text):
-        """Extract structured data from OCR text"""
-        data = {
-            'name': '',
-            'age': None,
-            'glucose': None,
-            'bp_systolic': None,
-            'bp_diastolic': None,
-            'cholesterol': None,
-            'bmi': None,
-            'smoker': False,
-            'family_history_diabetes': False
+        mock_data = {
+            'file_type': file_ext[1:].upper() if file_ext else 'UNKNOWN',
+            'scan_date': self.scan_date.strftime('%Y-%m-%d %H:%M'),
+            'pages': 1,
+            'extracted_data': self.generate_mock_extraction(file_ext)
         }
         
-        # Extract name
-        name_match = re.search(r'Name:\s*([A-Za-z\s\.]+)', text, re.IGNORECASE)
-        if name_match:
-            data['name'] = name_match.group(1).strip()
+        return mock_data
+    
+    def generate_mock_extraction(self, file_type):
+        """Generate mock extracted data based on file type"""
         
-        # Extract age
-        age_match = re.search(r'Age:\s*(\d+)\s*(?:years|yrs|yr)?', text, re.IGNORECASE)
-        if age_match:
-            data['age'] = int(age_match.group(1))
+        if file_type in ['.pdf', '.jpg', '.png', '.jpeg']:
+            # Mock lab report
+            return {
+                'type': 'Lab Report',
+                'patient_id': 'PAT-2024-001',
+                'date': '2024-02-10',
+                'lab_name': 'MediLabs Diagnostics',
+                'results': {
+                    'Glucose': {'value': 108, 'unit': 'mg/dL', 'normal_range': '70-100'},
+                    'Creatinine': {'value': 1.1, 'unit': 'mg/dL', 'normal_range': '0.7-1.2'},
+                    'Cholesterol': {'value': 215, 'unit': 'mg/dL', 'normal_range': '<200'},
+                    'HDL': {'value': 42, 'unit': 'mg/dL', 'normal_range': '>40'},
+                    'LDL': {'value': 148, 'unit': 'mg/dL', 'normal_range': '<100'},
+                    'Triglycerides': {'value': 185, 'unit': 'mg/dL', 'normal_range': '<150'},
+                    'HbA1c': {'value': 5.9, 'unit': '%', 'normal_range': '4.0-5.6'}
+                },
+                'interpretation': 'Elevated glucose and cholesterol levels detected.'
+            }
         
-        # Extract glucose
-        glucose_match = re.search(r'Glucose.*?(\d+)\s*mg/dL', text, re.IGNORECASE)
-        if glucose_match:
-            data['glucose'] = int(glucose_match.group(1))
+        elif file_type == '.txt':
+            # Mock doctor notes
+            return {
+                'type': 'Doctor Notes',
+                'patient': 'John Doe',
+                'date': '2024-02-10',
+                'doctor': 'Dr. Sarah Chen, MD',
+                'notes': """
+Patient presents with fatigue and increased thirst.
+Blood pressure: 138/88 mmHg
+Weight: 185 lbs, BMI: 27.8
+Family history: Father with Type 2 Diabetes
+Recommendations: 
+1. Follow up in 3 months for glucose test
+2. Begin lifestyle modifications
+3. Monitor blood pressure at home
+                """,
+                'diagnosis_codes': ['R53.83', 'R63.1']
+            }
         
-        # Extract blood pressure
-        bp_match = re.search(r'Blood Pressure.*?(\d+)\s*/\s*(\d+)\s*mmHg', text, re.IGNORECASE)
-        if bp_match:
-            data['bp_systolic'] = int(bp_match.group(1))
-            data['bp_diastolic'] = int(bp_match.group(2))
+        elif file_type == '.docx':
+            # Mock ECG report
+            return {
+                'type': 'ECG Report',
+                'patient': 'John Doe',
+                'date': '2024-02-10',
+                'technician': 'Michael Rodriguez, RCVT',
+                'findings': """
+Normal sinus rhythm
+Heart rate: 72 bpm
+PR interval: 160 ms
+QRS duration: 88 ms
+QT interval: 410 ms
+No significant ST segment changes
+No arrhythmias detected
+                """,
+                'impression': 'Normal ECG. No acute abnormalities detected.'
+            }
         
-        # Extract cholesterol
-        chol_match = re.search(r'Cholesterol.*?(\d+)\s*mg/dL', text, re.IGNORECASE)
-        if chol_match:
-            data['cholesterol'] = int(chol_match.group(1))
+        else:
+            return {
+                'type': 'Unknown Document',
+                'message': 'Document scanned successfully. Content analysis required.'
+            }
+    
+    def extract_metrics(self, scan_data):
+        """Extract health metrics from scanned data"""
+        metrics = {
+            'age': 35,
+            'weight': 185,
+            'glucose': 100,
+            'cholesterol': 200,
+            'creatinine': 1.0,
+            'bp_systolic': 120,
+            'bp_diastolic': 80
+        }
         
-        # Extract BMI
-        bmi_match = re.search(r'BMI.*?(\d+\.?\d*)\s*kg/m²', text, re.IGNORECASE)
-        if bmi_match:
-            data['bmi'] = float(bmi_match.group(1))
+        # Update with scanned data if available
+        if 'results' in scan_data.get('extracted_data', {}):
+            results = scan_data['extracted_data']['results']
+            
+            if 'Glucose' in results:
+                metrics['glucose'] = results['Glucose']['value']
+            
+            if 'Creatinine' in results:
+                metrics['creatinine'] = results['Creatinine']['value']
+            
+            if 'Cholesterol' in results:
+                metrics['cholesterol'] = results['Cholesterol']['value']
         
-        # Check for smoking
-        if re.search(r'smoker|smoking', text, re.IGNORECASE):
-            data['smoker'] = True
+        return metrics
+    
+    def validate_file(self, file_path):
+        """Validate uploaded file"""
+        if not os.path.exists(file_path):
+            return False, "File does not exist"
         
-        # Check for family history
-        if re.search(r'family.*?diabetes|diabetes.*?family', text, re.IGNORECASE):
-            data['family_history_diabetes'] = True
+        file_ext = os.path.splitext(file_path)[1].lower()
         
-        return data
-
-# For standalone testing
-if __name__ == "__main__":
-    scanner = MedicalReportScanner()
-    print("Medical Report Scanner initialized successfully.")
+        if file_ext not in self.supported_formats:
+            return False, f"Unsupported file format. Supported: {', '.join(self.supported_formats)}"
+        
+        # Check file size (mock)
+        file_size = os.path.getsize(file_path)
+        if file_size > 200 * 1024 * 1024:  # 200MB
+            return False, "File too large. Max size: 200MB"
+        
+        return True, "File validated successfully"
