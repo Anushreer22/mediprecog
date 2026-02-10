@@ -1,9 +1,9 @@
-# MediPrecog Requirements - Python 3.13 Compatible
+# MediPrecog - Python 3.13 Compatible
 streamlit==1.28.0
-pandas==2.1.4
+pandas==2.2.1  # Latest version with Python 3.13 support
 numpy==1.26.4
 plotly==5.18.0
 plotly-express==0.4.1
 pdfplumber==0.10.3
 Pillow==10.2.0
-setuptools==69.0.3s
+setuptools==69.0.3
