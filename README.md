@@ -92,3 +92,4 @@ Built for preventive healthcare awareness
 
 This project is for educational and research purposes only.
 It does not replace professional medical advice.
+[![Live App](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=streamlit)](https://mediprecog-ymgump9tuli2ygxx28mlgx.streamlit.app/)
